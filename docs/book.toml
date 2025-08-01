@@ -1,0 +1,20 @@
+[book]
+authors = ["maximilianheinrich"]
+language = "de"
+src = "src"
+title = "W-Seminar - Docs"
+
+[output.html]
+additional-css = ["./theme/css/catppuccin.css", "./mdbook-admonish.css", "./theme/css/mdbook-admonish.css"]
+
+[output.pdf]
+
+[preprocessor.github-authors]
+command = "mdbook-github-authors"
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.0.3" # do not edit: managed by `mdbook-admonish install`
+
+[preprocessor.katex]
+after = ["links"]
