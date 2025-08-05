@@ -20,6 +20,10 @@
 *.dylib
 *.dll
 
+# Output files
+*.bin
+*.iso
+
 # Fortran module files
 *.mod
 *.smod
