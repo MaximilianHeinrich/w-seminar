@@ -1,33 +1,33 @@
+ASM=nasm
 
-GPPPARAMS = -m32 -fno-use-cxa-atexit -nostdlib -fno-builtin -fno-rtti -fno-exceptions -fno-leading-underscore
-ASPARAMS = --32
-LDPARAMS = -melf_i386
+SRC_DIR=src
+BUILD_DIR=build
 
-objects = loader.o kernel.o
+.PHONY: all floppy_image kernel bootloader clean always
 
-%.o: %.cpp
-	g++ $(GPPPARAMS) -o $@ -c $<
+floppy_image: $(BUILD_DIR)/main_floppy.img
 
-%.o: %.s
-	as $(ASPARAMS) -o $@ $<
+$(BUILD_DIR)/main_floppy.img: bootloader kernel
+	dd if=/dev/zero of=$(BUILD_DIR)/main_floppy.img bs=512 count=2880
+	mkfs.fat -F 12 -n "NBOS" $(BUILD_DIR)/main_floppy.img
+	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main_floppy.img conv=notrunc
+	mcopy -i $(BUILD_DIR)/main_floppy.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
 
-qkernel.bin: linker.ld $(objects)
-	ld $(LDPARAMS) -T $< -o $@ $(objects)
+bootloader: $(BUILD_DIR)/bootloader.bin
 
-qkernel.iso: qkernel.bin
-	mkdir iso
-	mkdir iso/boot
-	mkdir iso/boot/grub
-	cp $< iso/boot/
-	echo 'set timeout=0' >> iso/boot/grub/grub.cfg
-	echo 'set default=0' >> iso/boot/grub/grub.cfg
-	echo '' >> iso/boot/grub/grub.cfg
-	echo 'menuentry "QOS " {' >> iso/boot/grub/grub.cfg
-	echo '	multiboot /boot/qkernel.bin' >> iso/boot/grub/grub.cfg
-	echo '	boot' >> iso/boot/grub/grub.cfg
-	echo '}' >> iso/boot/grub/grub.cfg
-	grub2-mkrescue --output=$@ iso
-	rm -rf iso
+$(BUILD_DIR)/bootloader.bin: always
+	$(ASM) $(SRC_DIR)/bootloader/boot.s -f bin -o $(BUILD_DIR)/bootloader.bin
 
-run: qkernel.iso
-	qemu-system-i386 -boot d -cdrom qkernel.iso -m 46
+kernel: $(BUILD_DIR)/kernel.bin
+
+$(BUILD_DIR)/kernel.bin: always
+	$(ASM) $(SRC_DIR)/kernel/kernel.s -f bin -o $(BUILD_DIR)/kernel.bin
+
+always:
+	mkdir -p $(BUILD_DIR)
+
+clean:
+	rm -rf $(BUILD_DIR)/*
+
+run:
+	qemu-system-i386 -fda $(BUILD_DIR)/main_floppy.img

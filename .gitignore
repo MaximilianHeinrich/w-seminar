@@ -23,6 +23,7 @@
 # Output files
 *.bin
 *.iso
+*.img
 
 # Fortran module files
 *.mod
